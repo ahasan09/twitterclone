@@ -1,0 +1,10 @@
+{% block title %}Signup{% endblock %}
+
+{% block content %}
+<h2>Sign Up Here... </h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Sign up</button>
+</form>
+{% endblock %}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compose</title>
+</head>
+
+<body>
+
+    {% include 'toolbar.html' %}
+
+    <div style="margin-left: 100px;margin-top: 10px;margin-right: 100px;">
+        <div style="float: left; width:250px;">
+
+            {% include 'profile.html' %}
+
+            {% include 'logout-button.html' %}
+
+        </div>
+        <div style="float: left; width:500px; margin-left: 50px;">
+            <h1 style="padding: 0px;margin: 0px;">
+                Tell everybody what you're up to! What's new? What's changed?
+            </h1>
+            <form action="/compose/" method="post">
+                {% csrf_token%}
+                {{ form.as_p }}
+                <div>
+                    <input type="submit" value="Tweet" id="tweet-button" />
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>

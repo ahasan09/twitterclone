@@ -1,0 +1,17 @@
+{% block content %}
+<div style="margin-left: 50px;margin-top: 10px;margin-right: 50px;">
+    <div style="float: left; width:300px">
+        <h1>Welcome to Twitterclone! Log in to get posting and see what your friends are up to!</h1>
+        <hr>
+        <p>Don't have an account?</p>
+        <a href="{% url 'signup' %}">Sign up here!</a>
+    </div>
+    <div style="float: left; width:300px; margin-left: 50px;">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+<div style="height:200px;border: 1px solid;padding: 5px;">
+    <p>{{ user.first_name }} {{user.last_name}}</p>
+    <a href="{% url 'user' request.user.username %}">@{{user.username}}</a>
+    <br>
+    <br>
+    <br>
+    <p>Tweets: {{tweet_count}}</p>
+    <p>Following: </p>
+</div>

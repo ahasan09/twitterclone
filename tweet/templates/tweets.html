@@ -1,0 +1,24 @@
+<div style="float: left; width:500px; margin-left: 50px;">
+    <h1 style="padding: 0px;margin: 0px;">What's happening, {{user.username}}?</h1>
+
+    {% for tweet in tweets %}
+    <ul>
+        {% if clickable %}
+        <li>
+            <span><a href="{% url 'user' tweet.user.username %}">@{{ tweet.user.username }}</a></span> - <span><a
+                    href="{% url 'tweet' tweet.id %}">{{ tweet.creation_date }}</a></span>
+        </li>
+        {% else %}
+        <li>
+            <span>@{{ tweet.user.username }}</span> - <span>{{ tweet.creation_date }}</span>
+        </li>
+        {% endif %}
+        <ul>
+            <li>
+                {{ tweet.body }}
+            </li>
+        </ul>
+    </ul>
+    {% endfor %}
+
+</div>
