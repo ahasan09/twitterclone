@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from twitteruser.models import TwitterUser
-from tweet.models import (Tweet, Notification)
+from tweet.models import Tweet
+from notification.models import Notification
 from tweet.forms import TweetForm
 from django.contrib.auth.decorators import login_required
 from twitteruser.models import FollowModel
@@ -58,7 +59,7 @@ def tweet(request, id=''):
 
         try:
             unread_notifications = Notification.objects.filter(
-                receiver=user, read=False)
+                receiver=request.user, read=False)
             unread_count = unread_notifications.count()
             current_user_tweets = Tweet.objects.filter(
                 Q(user__followed__follower=request.user.id) | Q(user=request.user)).order_by('-creation_date')
@@ -74,7 +75,8 @@ def tweet(request, id=''):
             tweet_count = 0
 
         return render(request, 'home.html', {'tweets': tweets, 'tweet_count': tweet_count, 'clickable': clickable, 'user': request.user, 'follow': follow,
-                                             'followings_count': followings_count, 'followers_count': followers_count})
+                                             'followings_count': followings_count, 'followers_count': followers_count,
+                                             'unread_count': unread_count})
     else:
         tweets = Tweet.objects.filter(pk=id)
         return render(request, 'home.html', {'tweets': tweets, 'tweet_count': tweet_count, 'clickable': clickable, 'user': None, 'follow': follow,
@@ -128,6 +130,27 @@ def selected_user(request, username=''):
 
 @login_required
 def compose(request):
+    tweet_count = 0
+    user = None
+    follow = False
+    unread_count = 0
+
+    user = get_object_or_404(TwitterUser, pk=request.user.id)
+
+    followings = FollowModel.objects.filter(follower=user)
+    followers = FollowModel.objects.filter(followed=user)
+    followings_count = followings.count()
+    followers_count = followers.count()
+
+    try:
+        unread_notifications = Notification.objects.filter(
+            receiver=user, read=False)
+        unread_count = unread_notifications.count()
+        tweet_count = Tweet.objects.filter(user=user).count()
+
+    except ObjectDoesNotExist:
+        tweet_count = 0
+
     form = TweetForm()
     if request.method == 'POST':
         form = TweetForm(request.POST)
@@ -144,40 +167,4 @@ def compose(request):
                         related=tweet)
                     notification_instance.save()
             return redirect('home')
-    return render(request, 'compose.html', {'form': form})
-
-
-@login_required
-def notification(request):
-    tweet_count = 0
-    clickable = True
-    user = None
-    follow = False
-    unread_count = 0
-
-    user = get_object_or_404(TwitterUser, pk=request.user.id)
-
-    followings = FollowModel.objects.filter(follower=user)
-    followers = FollowModel.objects.filter(followed=user)
-    followings_count = followings.count()
-    followers_count = followers.count()
-
-    try:
-        tweets = []
-        notifications = Notification.objects.filter(
-            receiver=user, read=False)
-        for item in notifications:
-            tweets.append(item.related)
-        print(tweets)
-        Notification.objects.filter(
-            receiver=user, read=False).update(read=True)
-        tweet_count = Tweet.objects.filter(user=user).count()
-
-    except ObjectDoesNotExist:
-        tweets = None
-        tweet_count = 0
-
-    return render(request, 'home.html', {'tweets': tweets, 'tweet_count': tweet_count, 'clickable': clickable, 'user': user, 'follow': follow,
-                                         'followings_count': followings_count, 'followers_count': followers_count,
-                                         'unread_count': unread_count,
-                                         'is_notification': True})
+    return render(request, 'compose.html', {'form': form, 'tweet_count': tweet_count, 'user': user, 'follow': follow, 'followings_count': followings_count, 'followers_count': followers_count, 'unread_count': unread_count})

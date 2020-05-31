@@ -36,13 +36,3 @@ class Tweet(models.Model):
                 result[u'mentions'].append(slugify(value))
         result[u'parsed_text'] = " ".join(parts)
         return result
-
-
-class Notification(models.Model):
-    sender = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='sender')
-    receiver = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='receiver')
-    related = models.ForeignKey(
-        Tweet, on_delete=models.CASCADE, related_name='related')
-    read = models.BooleanField(default=False)

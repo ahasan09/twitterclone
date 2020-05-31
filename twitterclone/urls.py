@@ -16,8 +16,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.conf.urls import include
-from tweet.views import (home, compose, tweet, selected_user, notification)
+from tweet.views import (home, compose, tweet, selected_user)
 from twitteruser.views import (signup, logout_action, follow, unfollow)
+from notification.views import notification
 
 urlpatterns = [
     path('admin/', admin.site.urls),
