@@ -1,5 +1,13 @@
+{% load filters %}
+
 <div style="float: left; width:500px; margin-left: 50px;">
-    <h1 style="padding: 0px;margin: 0px;">What's happening, {{user.username}}?</h1>
+    <h1 style="padding: 0px;margin: 0px;">
+        {% if is_notification %}
+        Here's your mentioned tweet
+        {% else %}
+        What's happening, {{user.username}}?
+        {% endif %}
+    </h1>
 
     {% for tweet in tweets %}
     <ul>
@@ -15,7 +23,10 @@
         {% endif %}
         <ul>
             <li>
-                {{ tweet.body }}
+                {% autoescape off %}
+                {{ tweet|parse_tweet_text }}
+                {% endautoescape %}
+
             </li>
         </ul>
     </ul>

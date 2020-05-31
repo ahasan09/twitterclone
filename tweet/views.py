@@ -1,38 +1,129 @@
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from twitteruser.models import TwitterUser
-from tweet.models import Tweet
+from tweet.models import (Tweet, Notification)
 from tweet.forms import TweetForm
 from django.contrib.auth.decorators import login_required
+from twitteruser.models import FollowModel
+from django.conf import settings
+from django.db.models import Q
+
+# User = settings.AUTH_USER_MODEL
 
 # Create your views here.
 @login_required
-def home(request, id='', username=''):
+def home(request):
     tweet_count = 0
     clickable = True
     user = None
+    follow = False
+    unread_count = 0
+
+    user = get_object_or_404(TwitterUser, pk=request.user.id)
+
+    followings = FollowModel.objects.filter(follower=user)
+    followers = FollowModel.objects.filter(followed=user)
+    followings_count = followings.count()
+    followers_count = followers.count()
+
+    try:
+        unread_notifications = Notification.objects.filter(
+            receiver=user, read=False)
+        unread_count = unread_notifications.count()
+        tweets = Tweet.objects.filter(
+            Q(user__followed__follower=user.id) | Q(user=user)).order_by('-creation_date')
+        tweet_count = Tweet.objects.filter(user=user).count()
+
+    except ObjectDoesNotExist:
+        tweets = None
+        tweet_count = 0
+
+    return render(request, 'home.html', {'tweets': tweets, 'tweet_count': tweet_count, 'clickable': clickable, 'user': user, 'follow': follow,
+                                         'followings_count': followings_count, 'followers_count': followers_count, 'unread_count': unread_count})
+
+
+def tweet(request, id=''):
+    tweet_count = 0
+    followings_count = 0
+    followers_count = 0
+    clickable = True
+    follow = False
+    unread_count = 0
+
+    if request.user.is_authenticated:
+        followings = FollowModel.objects.filter(follower=request.user)
+        followers = FollowModel.objects.filter(followed=request.user)
+        followings_count = followings.count()
+        followers_count = followers.count()
+
+        try:
+            unread_notifications = Notification.objects.filter(
+                receiver=user, read=False)
+            unread_count = unread_notifications.count()
+            current_user_tweets = Tweet.objects.filter(
+                Q(user__followed__follower=request.user.id) | Q(user=request.user)).order_by('-creation_date')
+            tweet_count = Tweet.objects.filter(user=request.user).count()
+
+            if id:
+                tweets = Tweet.objects.filter(pk=id)
+                clickable = False
+            else:
+                tweets = current_user_tweets
+        except ObjectDoesNotExist:
+            tweets = None
+            tweet_count = 0
+
+        return render(request, 'home.html', {'tweets': tweets, 'tweet_count': tweet_count, 'clickable': clickable, 'user': request.user, 'follow': follow,
+                                             'followings_count': followings_count, 'followers_count': followers_count})
+    else:
+        tweets = Tweet.objects.filter(pk=id)
+        return render(request, 'home.html', {'tweets': tweets, 'tweet_count': tweet_count, 'clickable': clickable, 'user': None, 'follow': follow,
+                                             'followings_count': followings_count, 'followers_count': followers_count,
+                                             'unread_count': unread_count})
+
+
+def selected_user(request, username=''):
+    tweet_count = 0
+    clickable = True
+    user = None
+    follow = True
+    unread_count = 0
+
+    current_user = get_object_or_404(TwitterUser, pk=request.user.id)
 
     if username:
         clickable = False
         user = get_object_or_404(TwitterUser, username=username)
+        if user.id == request.user.id:
+            follow = False
+        elif FollowModel.objects.filter(follower=current_user,
+                                        followed=user) .exists():
+            follow = False
+        else:
+            follow = True
     else:
-        user = get_object_or_404(TwitterUser, pk=request.user.id)
+        user = current_user
+        follow = False
+
+    followings = FollowModel.objects.filter(follower=user)
+    followers = FollowModel.objects.filter(followed=user)
+    followings_count = followings.count()
+    followers_count = followers.count()
 
     try:
-        if id:
-            tweets = Tweet.objects.filter(pk=id)
-            tweet_count = Tweet.objects.filter(
-                user=user).order_by('-creation_date').count()
-            clickable = False
-        else:
-            # tweets = Tweet.objects.filter(
-            #     user=user).order_by('-creation_date')
-            tweets = Tweet.objects.all().order_by('-creation_date')
-            tweet_count = tweets.count()
+        unread_notifications = Notification.objects.filter(
+            receiver=user, read=False)
+        unread_count = unread_notifications.count()
+        tweets = Tweet.objects.filter(
+            Q(user__followed__follower=user.id) | Q(user=user)).order_by('-creation_date')
+        tweet_count = Tweet.objects.filter(user=user).count()
     except ObjectDoesNotExist:
         tweets = None
         tweet_count = 0
-    return render(request, 'home.html', {'tweets': tweets, 'tweet_count': tweet_count, 'clickable': clickable, 'user': user})
+
+    return render(request, 'home.html', {'tweets': tweets, 'tweet_count': tweet_count, 'clickable': clickable, 'user': user, 'follow': follow,
+                                         'followings_count': followings_count, 'followers_count': followers_count,
+                                         'unread_count': unread_count})
 
 
 @login_required
@@ -44,5 +135,49 @@ def compose(request):
             tweet = form.save(commit=False)
             tweet.user = request.user
             tweet.save()
+            mentions = tweet.parse_mentions()
+            print(mentions)
+            if mentions:
+                for mention in mentions:
+                    notification_instance = Notification(
+                        sender=request.user, receiver=mention,
+                        related=tweet)
+                    notification_instance.save()
             return redirect('home')
     return render(request, 'compose.html', {'form': form})
+
+
+@login_required
+def notification(request):
+    tweet_count = 0
+    clickable = True
+    user = None
+    follow = False
+    unread_count = 0
+
+    user = get_object_or_404(TwitterUser, pk=request.user.id)
+
+    followings = FollowModel.objects.filter(follower=user)
+    followers = FollowModel.objects.filter(followed=user)
+    followings_count = followings.count()
+    followers_count = followers.count()
+
+    try:
+        tweets = []
+        notifications = Notification.objects.filter(
+            receiver=user, read=False)
+        for item in notifications:
+            tweets.append(item.related)
+        print(tweets)
+        Notification.objects.filter(
+            receiver=user, read=False).update(read=True)
+        tweet_count = Tweet.objects.filter(user=user).count()
+
+    except ObjectDoesNotExist:
+        tweets = None
+        tweet_count = 0
+
+    return render(request, 'home.html', {'tweets': tweets, 'tweet_count': tweet_count, 'clickable': clickable, 'user': user, 'follow': follow,
+                                         'followings_count': followings_count, 'followers_count': followers_count,
+                                         'unread_count': unread_count,
+                                         'is_notification': True})

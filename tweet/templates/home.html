@@ -13,11 +13,13 @@
 
     <div style="margin-left: 100px;margin-top: 10px;margin-right: 100px;">
         <div style="float: left; width:250px;">
-
+            {% if user %}
             {% include 'profile.html' %}
+            {% endif %}
 
+            {% if user %}
             {% include 'logout-button.html' %}
-
+            {% endif %}
         </div>
 
         {% include 'tweets.html' %}

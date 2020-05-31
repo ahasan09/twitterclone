@@ -1,7 +1,10 @@
 <div>
     <a href="/"><button>Home</button></a>
+    {% if user %}
     <a href="/compose/"><button>Tweet</button></a>
-    <a href="/notification/"><button>Notification</button></a>
-    <a href="/profile/"><button>Profile</button></a>
+    <a href="/notification/"><button>Notification [{{unread_count}}]</button></a>
+    <a href="/{{request.user.username}}/"><button>Profile</button></a>
+    <span>{{ request.user.username }}</span>
+    {% endif %}
     <hr>
 </div>
