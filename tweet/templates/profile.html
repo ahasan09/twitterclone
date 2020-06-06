@@ -1,23 +1,25 @@
 <div style="height:200px;border: 1px solid;padding: 5px;">
     <p>{{ user.first_name }} {{user.last_name}}</p>
-    <a href="{% url 'user' request.user.username %}">@{{user.username}}</a>
+    <a href="{% url 'user' user.username %}">@{{user.username}}</a>
     <br>
     <br>
     <br>
     <p style="padding: 0px;margin: 5px;">Tweets: {{tweet_count}}</p>
-    <p style="padding: 0px;margin: 5px;">Following: {{followings_count}}</p>
+    <!-- <p style="padding: 0px;margin: 5px;">Following: {{followings_count}}</p> -->
     <p style="padding: 0px;margin: 5px;">Followers: {{followers_count}}</p>
-    {% if follow %}
+    {% if request.user.is_authenticated and user.id != request.user.id%}
+    {% if not is_follow %}
     <form action="/follow/" method="post">
         {% csrf_token %}
         <input type="hidden" name="follow" value="{{ user.id }}">
         <input style="background-color: green;" type="submit" value="Follow">
     </form>
-    {% elif not follow and user.id != request.user.id %}
+    {% elif is_follow %}
     <form action="/unfollow/" method="post">
         {% csrf_token %}
         <input type="hidden" name="unfollow" value="{{ user.id }}">
         <input style="background-color: rgb(151, 53, 53);" type="submit" value="Unfollow">
     </form>
+    {% endif %}
     {% endif %}
 </div>

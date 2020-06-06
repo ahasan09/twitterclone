@@ -1,12 +1,7 @@
 from django.db import models
-from django.utils import timezone
-from django.conf import settings
 from django.template.defaultfilters import slugify
 from twitteruser.models import TwitterUser
 # Create your models here.
-
-
-User = settings.AUTH_USER_MODEL
 
 
 class Tweet(models.Model):
